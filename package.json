@@ -1,0 +1,25 @@
+{
+  "name": "runme",
+  "private": true,
+  "workspaces": [
+    "server",
+    "web",
+    "admin",
+    "mobile"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n server,web,admin -c blue,green,magenta \"npm run dev:server\" \"npm run dev:web\" \"npm run dev:admin\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:web": "npm --workspace web run dev",
+    "dev:admin": "npm --workspace admin run dev",
+    "db:migrate": "npm --workspace server run db:migrate",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down -v",
+    "typecheck": "npm --workspace server run typecheck && npm --workspace web run typecheck && npm --workspace admin run typecheck",
+    "build": "npm --workspace server run build && npm --workspace web run build && npm --workspace admin run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
+

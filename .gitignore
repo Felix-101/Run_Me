@@ -1,0 +1,19 @@
+node_modules
+dist
+build
+.DS_Store
+
+# env
+.env
+.env.*
+!.env.example
+
+# drizzle
+drizzle
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
