@@ -14,7 +14,7 @@ import '../presentation/widgets/loan_list_tile.dart';
 import '../presentation/widgets/trust_score_ring_widget.dart';
 import '../providers/repo_provider.dart';
 import './profile_screen.dart';
-
+import '../presentation/screens/fund_loan_screen.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -113,12 +113,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           _buildHomeTab(textTheme, currency),
           const LoanRequestScreen(embedInShell: true),
-          _LedgerPlaceholderTab(
+       /*    _LedgerPlaceholderTab(
             title: 'Fund a loan',
             subtitle: 'Browse requests and fund peers — coming soon.',
             icon: Icons.savings_outlined,
             textTheme: textTheme,
-          ),
+          ), */
+          const LendingMarketplaceScreen (),
+
           const FriendsLoansTab(),
           const ProfileScreen(),
         ],
