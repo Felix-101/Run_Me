@@ -1,64 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:sizer/sizer.dart';
 
 import 'config/app_config.dart';
-import 'repositories/auth_repository.dart';
-import 'services/api_client.dart';
+import 'features/example/views/example_screen.dart';
+import 'presentation/screens/loan_detail_screen.dart';
+import 'presentation/screens/loan_request_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding/onboarding_decentralized_screen.dart';
+import 'screens/onboarding/onboarding_peer_network_screen.dart';
+import 'screens/onboarding/onboarding_reputation_screen.dart';
+import 'screens/onboarding/onboarding_trust_capital_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.load();
-
-  final repo = AuthRepository(api: ApiClient());
-  runApp(MyApp(repo: repo));
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
-  final AuthRepository repo;
-
-  const MyApp({super.key, required this.repo});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  bool _hydrated = false;
-  bool _authed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _hydrateAuth();
-  }
-
-  Future<void> _hydrateAuth() async {
-    final token = await widget.repo.getAccessToken();
-    if (!mounted) return;
-    setState(() {
-      _authed = token != null;
-      _hydrated = true;
-    });
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (!_hydrated) {
-      return MaterialApp(
-        home: Scaffold(
-          appBar: AppBar(title: Text('RunMe')),
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-
-    return MaterialApp(
-      title: 'RunMe',
-      initialRoute: _authed ? '/home' : '/login',
-      routes: {
-        '/login': (ctx) => LoginScreen(repo: widget.repo),
-        '/home': (ctx) => HomeScreen(repo: widget.repo),
+    return Sizer(
+      builder: (context, orientation, deviceType) {
+        final baseTheme = ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1A73E8),
+          ),
+        );
+        return MaterialApp(
+          title: 'RunMe',
+          theme: baseTheme.copyWith(
+            textTheme: GoogleFonts.spaceGroteskTextTheme(baseTheme.textTheme),
+            primaryTextTheme:
+                GoogleFonts.spaceGroteskTextTheme(baseTheme.primaryTextTheme),
+          ),
+          home: const SplashScreen(),
+          routes: {
+            '/onboarding': (ctx) => const OnboardingReputationScreen(),
+            '/onboarding-peer': (ctx) => const OnboardingPeerNetworkScreen(),
+            '/onboarding-decentralized': (ctx) =>
+                const OnboardingDecentralizedScreen(),
+            '/onboarding-trust-capital': (ctx) =>
+                const OnboardingTrustCapitalScreen(),
+            '/login': (ctx) => const LoginScreen(),
+            '/home': (ctx) => const HomeScreen(),
+            '/loan-request': (ctx) => const LoanRequestScreen(),
+            '/loan-detail': (ctx) {
+              final id = ModalRoute.of(ctx)!.settings.arguments as String?;
+              if (id == null || id.isEmpty) {
+                return const Scaffold(
+                  body: Center(child: Text('Missing loan id')),
+                );
+              }
+              return LoanDetailScreen(loanId: id);
+            },
+            '/example': (ctx) => const ExampleScreen(),
+          },
+        );
       },
     );
   }

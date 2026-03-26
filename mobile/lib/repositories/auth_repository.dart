@@ -1,22 +1,22 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import '../models/admin_summary.dart';
 import '../models/me.dart';
+import '../modules/secure_storage.dart';
 import '../services/api_client.dart';
 
 class AuthRepository {
   final ApiClient api;
-  final FlutterSecureStorage _storage;
+  final SecureStorage _storage;
 
-  static const _tokenKey = 'accessToken';
+  AuthRepository({
+    required this.api,
+    SecureStorage? storage,
+  }) : _storage = storage ?? SecureStorage();
 
-  AuthRepository({required this.api}) : _storage = const FlutterSecureStorage();
+  Future<String?> getAccessToken() => _storage.tokenRead();
 
-  Future<String?> getAccessToken() => _storage.read(key: _tokenKey);
+  Future<void> saveAccessToken(String token) => _storage.tokenWrite(token);
 
-  Future<void> saveAccessToken(String token) => _storage.write(key: _tokenKey, value: token);
-
-  Future<void> clearAccessToken() => _storage.delete(key: _tokenKey);
+  Future<void> clearAccessToken() => _storage.tokenDelete();
 
   Future<String> login({required String email, required String password}) async {
     final json = await api.postJson('/auth/login', {

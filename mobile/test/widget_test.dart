@@ -5,12 +5,14 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile/config/app_config.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/models/admin_summary.dart';
 import 'package:mobile/models/me.dart';
+import 'package:mobile/providers/repo_provider.dart';
 import 'package:mobile/repositories/auth_repository.dart';
 import 'package:mobile/services/api_client.dart';
 
@@ -23,7 +25,19 @@ void main() {
     // Avoid secure storage / network calls during widget tests.
     final repo = _FakeAuthRepository(api: api);
 
-    await tester.pumpWidget(MyApp(repo: repo));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 3));
+    // Splash → onboarding; wait for orbit → content transition (~2.6s + animation).
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skip Intro'));
     await tester.pumpAndSettle();
 
     expect(find.text('Login'), findsOneWidget);
