@@ -13,6 +13,7 @@ import '../presentation/utils/loan_display.dart';
 import '../presentation/widgets/loan_list_tile.dart';
 import '../presentation/widgets/trust_score_ring_widget.dart';
 import '../providers/repo_provider.dart';
+import './profile_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     'Borrow',
     'Fund',
     'Friends',
+    'Profile',
   ];
 
   @override
@@ -118,6 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             textTheme: textTheme,
           ),
           const FriendsLoansTab(),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -146,6 +149,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.groups_2_outlined),
             selectedIcon: Icon(Icons.groups_2_rounded),
             label: 'Friends',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_2_outlined),
+            selectedIcon: Icon(Icons.person_2_rounded),
+            label: 'Profile',
           ),
         ],
       ),
@@ -231,10 +239,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             amount: loan.amount,
                             currency: currency,
                             textTheme: textTheme,
-                            onTap: () => Navigator.of(context).pushNamed(
-                              '/loan-detail',
-                              arguments: loan.id,
-                            ),
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed('/loan-detail', arguments: loan.id),
                           ),
                         ),
                       )
@@ -256,7 +263,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               if (_adminSummary != null) ...[
                 const SizedBox(height: 16),
-                _AdminSummaryCard(summary: _adminSummary!, textTheme: textTheme),
+                _AdminSummaryCard(
+                  summary: _adminSummary!,
+                  textTheme: textTheme,
+                ),
               ],
             ],
           ),
@@ -266,9 +276,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _stub(String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label — coming soon.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$label — coming soon.')));
   }
 }
 
@@ -357,7 +367,9 @@ class _TrustScoreSection extends ConsumerWidget {
                 ),
                 error: (e, _) => Text(
                   'Trust score unavailable',
-                  style: textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: Colors.red.shade700,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -370,10 +382,7 @@ class _TrustScoreSection extends ConsumerWidget {
 }
 
 class _FactorGrid extends StatelessWidget {
-  const _FactorGrid({
-    required this.factors,
-    required this.textTheme,
-  });
+  const _FactorGrid({required this.factors, required this.textTheme});
 
   final TrustScoreFactors factors;
   final TextTheme textTheme;
@@ -492,7 +501,10 @@ class _LedgerPlaceholderTab extends StatelessWidget {
                 color: _HomeScreenState._cardSocial,
                 borderRadius: BorderRadius.circular(24),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 36,
+                    horizontal: 24,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -552,10 +564,7 @@ class _ShadowCard extends StatelessWidget {
 }
 
 class _AdminSummaryCard extends StatelessWidget {
-  const _AdminSummaryCard({
-    required this.summary,
-    required this.textTheme,
-  });
+  const _AdminSummaryCard({required this.summary, required this.textTheme});
 
   final AdminSummary summary;
   final TextTheme textTheme;
@@ -583,4 +592,3 @@ class _AdminSummaryCard extends StatelessWidget {
     );
   }
 }
-

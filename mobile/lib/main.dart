@@ -14,15 +14,12 @@ import 'screens/onboarding/onboarding_peer_network_screen.dart';
 import 'screens/onboarding/onboarding_reputation_screen.dart';
 import 'screens/onboarding/onboarding_trust_capital_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppConfig.load();
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -34,16 +31,15 @@ class MyApp extends StatelessWidget {
       builder: (context, orientation, deviceType) {
         final baseTheme = ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1A73E8),
-          ),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A73E8)),
         );
         return MaterialApp(
           title: 'RunMe',
           theme: baseTheme.copyWith(
             textTheme: GoogleFonts.spaceGroteskTextTheme(baseTheme.textTheme),
-            primaryTextTheme:
-                GoogleFonts.spaceGroteskTextTheme(baseTheme.primaryTextTheme),
+            primaryTextTheme: GoogleFonts.spaceGroteskTextTheme(
+              baseTheme.primaryTextTheme,
+            ),
           ),
           home: const SplashScreen(),
           routes: {
@@ -66,6 +62,7 @@ class MyApp extends StatelessWidget {
               return LoanDetailScreen(loanId: id);
             },
             '/example': (ctx) => const ExampleScreen(),
+            '/profile': (ctx) => const ProfileScreen(),
           },
         );
       },
