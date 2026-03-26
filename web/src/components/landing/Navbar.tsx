@@ -6,14 +6,14 @@ export default function Navbar() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img
-            alt="RunMe"
+            alt="runme"
             className="h-10 w-10 shrink-0 object-contain"
             src={brandIcon}
             width={40}
             height={40}
           />
           <div>
-            <div className="text-lg font-semibold text-white">RunMe</div>
+            <div className="text-lg font-semibold text-white">runme</div>
           </div>
         </div>
 

@@ -71,7 +71,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                   const SizedBox(height: 28),
                   Text(
-                    'Run Me',
+                    'runme',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Colors.white,

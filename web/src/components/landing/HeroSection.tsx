@@ -31,7 +31,7 @@ export default function HeroSection() {
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/65">
               The easiest way for Nigerian students to access quick funds. Join thousands of students
-              getting funded daily on the RunMe mobile app.
+              getting funded daily on the runme mobile app.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -59,7 +59,7 @@ export default function HeroSection() {
           <div className="relative md:justify-self-end md:pl-10">
             <div className="absolute -inset-12 opacity-70 bg-[radial-gradient(circle_at_35%_35%,rgba(34,197,94,0.18),transparent_65%)] blur-2xl" />
             <img
-              alt="RunMe app preview"
+              alt="runme app preview"
               className="relative mx-auto w-full max-w-sm drop-shadow-2xl md:max-w-md lg:max-w-lg"
               loading="lazy"
               decoding="async"

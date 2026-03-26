@@ -9,13 +9,13 @@ export default function JoinAndFooterSection() {
       <div className="mx-auto w-full max-w-7xl px-6 pb-10 pt-12">
         <div className="text-center">
           <div className="text-4xl font-extrabold text-white">
-            Ready to join the RunMe
+            Ready to join the runme
             <br />
             movement?
           </div>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/55">
             Whether you&apos;re fixing your school fees or empowering the next
-            genius, RunMe is where Nigerian excellence meets community capital.
+            genius, runme is where Nigerian excellence meets community capital.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -39,13 +39,13 @@ export default function JoinAndFooterSection() {
             <div className="md:col-span-1">
               <div className="flex items-center gap-3">
                 <img
-                  alt="RunMe"
+                  alt="runme"
                   className="h-10 w-10 shrink-0 object-contain"
                   src={brandIcon}
                   width={40}
                   height={40}
                 />
-                <div className="text-sm font-semibold text-white">RunMe</div>
+                <div className="text-sm font-semibold text-white">runme</div>
               </div>
               <div className="mt-4 text-sm leading-relaxed text-white/55">
                 Empowering Nigerian students through peer support and
@@ -104,7 +104,7 @@ export default function JoinAndFooterSection() {
 
           <div className="mt-10 flex flex-col gap-2 border-t border-white/5 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-white/45">
-              © 2026 RunMe Nigeria. All academic rights reserved.
+              © 2026 runme Nigeria. All academic rights reserved.
             </div>
             <div className="flex items-center gap-2 text-xs text-white/45">
               <span className="inline-block h-2 w-2 rounded-full bg-green-300" />

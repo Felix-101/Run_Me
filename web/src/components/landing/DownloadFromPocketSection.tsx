@@ -35,7 +35,7 @@ export default function DownloadFromPocketSection() {
               </div>
 
               <p className="mt-4 max-w-md text-sm leading-relaxed text-white/60">
-                Get the full RunMe experience. Real-time notifications, faster disbursements, and exclusive
+                Get the full runme experience. Real-time notifications, faster disbursements, and exclusive
                 student rewards only on the mobile app.
               </p>
 
@@ -48,7 +48,7 @@ export default function DownloadFromPocketSection() {
             <div className="relative flex min-h-[280px] items-center justify-center md:min-h-[360px]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(34,197,94,0.35),transparent_55%)] blur-3xl" />
               <img
-                alt="RunMe app on a phone"
+                alt="runme app on a phone"
                 className="relative z-[1] mx-auto h-auto w-full max-w-[min(100%,280px)] object-contain drop-shadow-[0_0_60px_rgba(74,222,128,0.25)] md:max-w-[min(100%,320px)]"
                 loading="lazy"
                 decoding="async"

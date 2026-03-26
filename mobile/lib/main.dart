@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
           ),
         );
         return MaterialApp(
-          title: 'RunMe',
+          title: 'runme',
           theme: baseTheme.copyWith(
             textTheme: GoogleFonts.spaceGroteskTextTheme(baseTheme.textTheme),
             primaryTextTheme:

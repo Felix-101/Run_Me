@@ -77,7 +77,7 @@ export default function CampusLifeSection() {
             Designed for Campus Life
           </h2>
           <p className="mx-auto mt-4 max-w-2xl font-sans text-base text-white/60">
-            Skip the bank queues. RunMe connects you to capital that understands the Nigerian academic
+            Skip the bank queues. runme connects you to capital that understands the Nigerian academic
             journey.
           </p>
         </div>

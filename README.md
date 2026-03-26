@@ -1,4 +1,4 @@
-# RunMe
+# runme
 
 Monorepo for:
 - Server (Express + Drizzle ORM + Postgres + Redis)

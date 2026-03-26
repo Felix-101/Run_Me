@@ -18,7 +18,7 @@ async function main() {
   const app = createApp();
   const server = app.listen(env.SERVER_PORT, () => {
     // eslint-disable-next-line no-console
-    console.log(`RunMe API listening on ${env.SERVER_BASE_URL ?? `:${env.SERVER_PORT}`}`);
+    console.log(`runme API listening on ${env.SERVER_BASE_URL ?? `:${env.SERVER_PORT}`}`);
   });
 
   const shutdown = async () => {
