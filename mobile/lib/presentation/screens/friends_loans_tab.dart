@@ -17,7 +17,7 @@ class FriendsLoansTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final currency = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
+    final currency = NumberFormat.currency(symbol: r'₦', decimalDigits: 2);
     final async = ref.watch(activeLoansProvider);
 
     return ColoredBox(

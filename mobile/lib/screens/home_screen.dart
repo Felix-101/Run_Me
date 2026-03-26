@@ -40,7 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _navIndex = 0;
 
   static const List<String> _navTitles = [
-    'Ledger',
+    'Home',
     'Borrow',
     'Fund',
     'Friends',
@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 2);
 
     return Scaffold(
       backgroundColor: _pageBg,
@@ -453,6 +453,7 @@ class _WalletCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               currency.format(balance),
+              // '₦$balance',
               style: textTheme.headlineMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,

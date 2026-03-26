@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-
+import 'package:intl/intl.dart';
 // ─── Entry point (remove if adding to existing app) ───────────────────────────
 
 // ─── Colour palette ────────────────────────────────────────────────────────────
@@ -432,23 +432,24 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currency = NumberFormat.currency(symbol: r'₦', decimalDigits: 2);
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: _StatCard(
             label: 'BORROWING',
-            amount: '\$450',
+            amount: currency.format(3200),
             sub: '12 Active Cycles',
             iconData: Icons.south_west_rounded,
             iconColor: _C.iconBorrow,
             iconBg: _C.blueLight,
           ),
         ),
-        SizedBox(width: 14),
+        const SizedBox(width: 14),
         Expanded(
           child: _StatCard(
             label: 'LENDING',
-            amount: '\$1,200',
+            amount: currency.format(8500),
             sub: '100% Repaid',
             iconData: Icons.north_east_rounded,
             iconColor: _C.green,
