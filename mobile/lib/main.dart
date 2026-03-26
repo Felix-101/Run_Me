@@ -34,6 +34,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A73E8)),
         );
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
           title: 'RunMe',
           theme: baseTheme.copyWith(
             textTheme: GoogleFonts.spaceGroteskTextTheme(baseTheme.textTheme),
