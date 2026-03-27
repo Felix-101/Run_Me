@@ -1,7 +1,12 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-// ─── Entry point (remove if adding to existing app) ───────────────────────────
+
+import '../domain/entities/trust_score.dart';
+import '../presentation/providers/profile_stats_provider.dart';
+import '../presentation/providers/trust_score_providers.dart';
 
 // ─── Colour palette ────────────────────────────────────────────────────────────
 class _C {
@@ -19,59 +24,62 @@ class _C {
   static const divider = Color(0xFFE4EAF2);
   static const badgeBg = Color(0xFFF0F4FA);
   static const iconBorrow = Color(0xFF3A7BD5);
-  static const iconLend = Color(0xFF2ECC71);
   static const cardShadow = Color(0x0F000000);
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        // physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: const [
-            _ProfileHeader(),
-            SizedBox(height: 24),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _ScoreCard(),
-                  SizedBox(height: 16),
-                  _StatsRow(),
-                  SizedBox(height: 28),
-                  _SecuritySection(),
-                  SizedBox(height: 32),
-                ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ColoredBox(
+      color: _C.bg,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const _ProfileHeader(),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    const _TrustScoreBlock(),
+                    const SizedBox(height: 16),
+                    const _ProfileStatsGrid(),
+                    const SizedBox(height: 24),
+                    const _EndorsementsSection(),
+                    const SizedBox(height: 24),
+                    const _SettingsSection(),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Profile header ────────────────────────────────────────────────────────────
-class _ProfileHeader extends StatelessWidget {
+// ─── User info ─────────────────────────────────────────────────────────────────
+class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = ref.watch(profileDisplayNameProvider);
+    final school = ref.watch(profileSchoolProvider);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 32),
       decoration: const BoxDecoration(color: _C.bg),
       child: Column(
         children: [
-          // Avatar with ring + badge
           Stack(
             clipBehavior: Clip.none,
             children: [
-              // Outer gradient ring
               Container(
                 width: 100,
                 height: 100,
@@ -96,10 +104,9 @@ class _ProfileHeader extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: Color(0xFF2B3A52),
                   ),
-                  child: ClipOval(child: _AvatarIllustration()),
+                  child: const ClipOval(child: _AvatarIllustration()),
                 ),
               ),
-              // Verified badge
               Positioned(
                 bottom: 2,
                 right: 2,
@@ -123,9 +130,9 @@ class _ProfileHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Alex Thompson',
-            style: TextStyle(
+          Text(
+            name,
+            style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
               color: _C.text,
@@ -143,11 +150,11 @@ class _ProfileHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.school_rounded, size: 14, color: _C.blue),
+                const Icon(Icons.school_rounded, size: 14, color: _C.blue),
                 const SizedBox(width: 6),
                 Text(
-                  'Babcock University',
-                  style: TextStyle(
+                  school,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: _C.blue,
@@ -157,24 +164,31 @@ class _ProfileHeader extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Verification badge · Student ID on file',
+            style: TextStyle(
+              fontSize: 12,
+              color: _C.green,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-// ─── Simple avatar illustration ────────────────────────────────────────────────
 class _AvatarIllustration extends StatelessWidget {
+  const _AvatarIllustration();
+
   @override
   Widget build(BuildContext context) {
-    // Renders a clean avatar using a CircleAvatar placeholder with a person icon
-    // Replace with Image.asset/Image.network for a real photo.
     return Container(
       color: const Color(0xFF2B3A52),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // Head
           Container(
             width: 42,
             height: 42,
@@ -186,7 +200,6 @@ class _AvatarIllustration extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Hair
                 Positioned(
                   top: 0,
                   child: Container(
@@ -200,7 +213,6 @@ class _AvatarIllustration extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Ears
                 Positioned(
                   left: 0,
                   top: 16,
@@ -232,7 +244,6 @@ class _AvatarIllustration extends StatelessWidget {
               ],
             ),
           ),
-          // Suit body
           Container(
             width: 70,
             height: 35,
@@ -258,16 +269,50 @@ class _AvatarIllustration extends StatelessWidget {
   }
 }
 
-// ─── Score card ────────────────────────────────────────────────────────────────
-class _ScoreCard extends StatelessWidget {
-  const _ScoreCard();
+// ─── Trust score (repayment, activity, peer ratings) ───────────────────────────
+class _TrustScoreBlock extends ConsumerWidget {
+  const _TrustScoreBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(trustScoreProvider);
+
+    return async.when(
+      loading: () => const _Card(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (_, __) => _Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Trust score unavailable',
+            style: TextStyle(color: _C.textSub),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+      data: (ts) => _ScoreCardBody(trustScore: ts),
+    );
+  }
+}
+
+class _ScoreCardBody extends StatelessWidget {
+  const _ScoreCardBody({required this.trustScore});
+
+  final TrustScore trustScore;
 
   @override
   Widget build(BuildContext context) {
+    final score = trustScore.score.clamp(0, 100);
+    final f = trustScore.factors;
+    final standing = trustScore.level;
+
     return _Card(
       child: Stack(
         children: [
-          // Top-right icon
           Positioned(
             top: 0,
             right: 0,
@@ -276,7 +321,6 @@ class _ScoreCard extends StatelessWidget {
           Column(
             children: [
               const SizedBox(height: 8),
-              // Circular progress
               Center(
                 child: Stack(
                   alignment: Alignment.center,
@@ -284,22 +328,24 @@ class _ScoreCard extends StatelessWidget {
                     SizedBox(
                       width: 140,
                       height: 140,
-                      child: CustomPaint(painter: _ScoreRingPainter(score: 85)),
+                      child: CustomPaint(
+                        painter: _ScoreRingPainter(score: score),
+                      ),
                     ),
                     Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          '85',
-                          style: TextStyle(
+                          '$score',
+                          style: const TextStyle(
                             fontSize: 44,
                             fontWeight: FontWeight.w900,
                             color: _C.scoreBlue,
                             height: 1,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
+                        const SizedBox(height: 2),
+                        const Text(
                           'SCORE',
                           style: TextStyle(
                             fontSize: 11,
@@ -310,44 +356,82 @@ class _ScoreCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // TOP 5% badge
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _C.greenLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _C.green.withValues(alpha: 0.3),
+                    if (score >= 80)
+                      Positioned(
+                        bottom: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
                           ),
-                        ),
-                        child: Text(
-                          'TOP 5%',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: _C.green,
-                            letterSpacing: 0.5,
+                          decoration: BoxDecoration(
+                            color: _C.greenLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _C.green.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: const Text(
+                            'TOP 5%',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: _C.green,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Excellent Standing',
-                style: TextStyle(
+              const SizedBox(height: 16),
+              Text(
+                '$standing standing',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                   color: _C.text,
                 ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Your score blends repayment history, on-platform activity, and peer ratings.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _C.textSub,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  _FactorChip(
+                    label: 'Repayment',
+                    value: f.repaymentScore,
+                    color: const Color(0xFF166534),
+                  ),
+                  _FactorChip(
+                    label: 'Activity',
+                    value: f.activityScore,
+                    color: _C.blue,
+                  ),
+                  _FactorChip(
+                    label: 'Peer ratings',
+                    value: f.socialScore,
+                    color: const Color(0xFF7C3AED),
+                  ),
+                  _FactorChip(
+                    label: 'Verification',
+                    value: f.verificationScore,
+                    color: _C.textSub,
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               RichText(
@@ -361,10 +445,10 @@ class _ScoreCard extends StatelessWidget {
                   children: [
                     const TextSpan(
                       text:
-                          "Your reliability is exceptional. You're\namong our most trusted ",
+                          "You're building a reputation as one of our most trusted ",
                     ),
                     TextSpan(
-                      text: 'academic\nlenders.',
+                      text: 'academic peers.',
                       style: TextStyle(
                         color: _C.green,
                         fontWeight: FontWeight.w700,
@@ -373,7 +457,6 @@ class _ScoreCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
             ],
           ),
         ],
@@ -382,7 +465,38 @@ class _ScoreCard extends StatelessWidget {
   }
 }
 
-// ─── Score ring painter ────────────────────────────────────────────────────────
+class _FactorChip extends StatelessWidget {
+  const _FactorChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: _C.badgeBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Text(
+        '$label $value',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
 class _ScoreRingPainter extends CustomPainter {
   final int score;
   const _ScoreRingPainter({required this.score});
@@ -426,34 +540,211 @@ class _ScoreRingPainter extends CustomPainter {
   bool shouldRepaint(_ScoreRingPainter old) => old.score != score;
 }
 
-// ─── Stats row ─────────────────────────────────────────────────────────────────
-class _StatsRow extends StatelessWidget {
-  const _StatsRow();
+// ─── Stats grid ──────────────────────────────────────────────────────────────
+class _ProfileStatsGrid extends ConsumerWidget {
+  const _ProfileStatsGrid();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(profileStatsProvider);
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'STATS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _C.textLight,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _MiniStat(
+                label: 'Loans taken',
+                value: '${stats.loansTaken}',
+                icon: Icons.description_outlined,
+                iconColor: _C.iconBorrow,
+                iconBg: _C.blueLight,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MiniStat(
+                label: 'Loans repaid',
+                value: '${stats.loansRepaid}',
+                icon: Icons.task_alt_rounded,
+                iconColor: _C.green,
+                iconBg: _C.greenLight,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MiniStat(
+                label: 'Amount lent',
+                value: currency.format(stats.amountLentNaira),
+                icon: Icons.north_east_rounded,
+                iconColor: _C.green,
+                iconBg: _C.greenLight,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MiniStat(
+                label: 'Grants given',
+                value: currency.format(stats.grantsGivenNaira),
+                icon: Icons.volunteer_activism_outlined,
+                iconColor: const Color(0xFFEA580C),
+                iconBg: const Color(0xFFFFF7ED),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
 
   @override
   Widget build(BuildContext context) {
-    final currency = NumberFormat.currency(symbol: r'₦', decimalDigits: 2);
-    return Row(
+    return _Card(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: _C.textSub,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: _C.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Endorsements ─────────────────────────────────────────────────────────────
+class _EndorsementsSection extends ConsumerWidget {
+  const _EndorsementsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stats = ref.watch(profileStatsProvider);
+    final extra = <String>[];
+    if (stats.loansRepaid > 0) {
+      extra.add('Paid back on time');
+    }
+    if (stats.loansTaken > 0 && stats.loansRepaid == stats.loansTaken) {
+      extra.add('Trusted borrower');
+    }
+    if (stats.amountLentNaira > 0) {
+      extra.add('Active lender');
+    }
+    if (stats.grantsGivenNaira > 0) {
+      extra.add('Community supporter');
+    }
+
+    const base = [
+      'Reliable peer',
+      'Responds quickly',
+      'Transparent communication',
+    ];
+
+    final tags = <String>[...base, ...extra];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _StatCard(
-            label: 'BORROWING',
-            amount: currency.format(3200),
-            sub: '12 Active Cycles',
-            iconData: Icons.south_west_rounded,
-            iconColor: _C.iconBorrow,
-            iconBg: _C.blueLight,
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'REVIEWS & ENDORSEMENTS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _C.textLight,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _StatCard(
-            label: 'LENDING',
-            amount: currency.format(8500),
-            sub: '100% Repaid',
-            iconData: Icons.north_east_rounded,
-            iconColor: _C.green,
-            iconBg: _C.greenLight,
+        _Card(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tags
+                    .map(
+                      (t) => Chip(
+                        label: Text(t),
+                        backgroundColor: _C.greenLight,
+                        side: BorderSide.none,
+                        labelStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _C.text,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Endorsements are generated from your repayment record, lender feedback, and grant activity.',
+                style: TextStyle(fontSize: 12, color: _C.textSub, height: 1.4),
+              ),
+            ],
           ),
         ),
       ],
@@ -461,84 +752,19 @@ class _StatsRow extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String amount;
-  final String sub;
-  final IconData iconData;
-  final Color iconColor;
-  final Color iconBg;
-
-  const _StatCard({
-    required this.label,
-    required this.amount,
-    required this.sub,
-    required this.iconData,
-    required this.iconColor,
-    required this.iconBg,
-  });
+// ─── Settings ──────────────────────────────────────────────────────────────────
+class _SettingsSection extends ConsumerWidget {
+  const _SettingsSection();
 
   @override
-  Widget build(BuildContext context) {
-    return _Card(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(iconData, color: iconColor, size: 18),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: _C.textSub,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            amount,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: _C.text,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(sub, style: const TextStyle(fontSize: 12, color: _C.textSub)),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Security section ──────────────────────────────────────────────────────────
-class _SecuritySection extends StatelessWidget {
-  const _SecuritySection();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 14),
+          padding: EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            'SECURITY & CREDENTIALS',
+            'SETTINGS',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -551,29 +777,51 @@ class _SecuritySection extends StatelessWidget {
           padding: EdgeInsets.zero,
           child: Column(
             children: [
-              _SecurityTile(
-                icon: Icons.badge_rounded,
-                iconBg: _C.green,
-                iconColor: Colors.white,
-                title: 'Campus Credentials',
-                subtitle: 'VERIFIED STUDENT STATUS',
-                subtitleColor: _C.green,
-                isFirst: true,
-                hasBorder: true,
-              ),
-              _SecurityTile(
-                icon: Icons.security_rounded,
+              _SettingsTile(
+                icon: Icons.account_balance_rounded,
                 iconBg: _C.blueLight,
                 iconColor: _C.blue,
-                title: 'Account Protection',
-                hasBorder: true,
+                title: 'Bank account',
+                subtitle: 'Payouts & verified withdrawals',
+                onTap: () => _toast(
+                  context,
+                  'Link a bank account in production — demo only.',
+                ),
               ),
-              _SecurityTile(
+              const Divider(height: 1, indent: 76, color: _C.divider),
+              _SettingsTile(
                 icon: Icons.notifications_rounded,
                 iconBg: _C.badgeBg,
                 iconColor: _C.textSub,
                 title: 'Notifications',
-                isLast: true,
+                subtitle: 'Push, email, grant alerts',
+                onTap: () =>
+                    Navigator.of(context).pushNamed('/notifications'),
+              ),
+              const Divider(height: 1, indent: 76, color: _C.divider),
+              _SettingsTile(
+                icon: Icons.lock_rounded,
+                iconBg: _C.greenLight,
+                iconColor: _C.green,
+                title: 'Security',
+                subtitle: 'PIN, biometrics, sessions',
+                onTap: () => _toast(
+                  context,
+                  'Security center — add PIN / Face ID in a future build.',
+                ),
+              ),
+              const Divider(height: 1, indent: 76, color: _C.divider),
+              _SettingsTile(
+                icon: Icons.badge_rounded,
+                iconBg: _C.green,
+                iconColor: Colors.white,
+                title: 'Campus credentials',
+                subtitle: 'VERIFIED STUDENT STATUS',
+                subtitleColor: _C.green,
+                onTap: () => _toast(
+                  context,
+                  'Student verification is active.',
+                ),
               ),
             ],
           ),
@@ -581,120 +829,96 @@ class _SecuritySection extends StatelessWidget {
       ],
     );
   }
+
+  void _toast(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 }
 
-class _SecurityTile extends StatelessWidget {
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.subtitleColor,
+  });
+
   final IconData icon;
   final Color iconBg;
   final Color iconColor;
   final String title;
   final String? subtitle;
   final Color? subtitleColor;
-  final bool isFirst;
-  final bool isLast;
-  final bool hasBorder;
-
-  const _SecurityTile({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    this.subtitle,
-    this.subtitleColor,
-    this.isFirst = false,
-    this.isLast = false,
-    this.hasBorder = false,
-  });
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: isFirst
-                ? const Border(left: BorderSide(color: _C.green, width: 3))
-                : null,
-            borderRadius: isFirst
-                ? const BorderRadius.only(topLeft: Radius.circular(16))
-                : null,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.vertical(
-                top: isFirst ? const Radius.circular(16) : Radius.zero,
-                bottom: isLast ? const Radius.circular(16) : Radius.zero,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 16,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: iconBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(icon, color: iconColor, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: _C.text,
-                            ),
-                          ),
-                          if (subtitle != null) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              subtitle!,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: subtitleColor ?? _C.textSub,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ],
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: _C.text,
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: _C.textLight,
-                      size: 22,
-                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: subtitleColor ?? _C.textSub,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: _C.textLight,
+                size: 22,
+              ),
+            ],
           ),
         ),
-        if (hasBorder)
-          Divider(height: 1, thickness: 1, color: _C.divider, indent: 76),
-      ],
+      ),
     );
   }
 }
 
-// ─── Reusable card ─────────────────────────────────────────────────────────────
 class _Card extends StatelessWidget {
+  const _Card({required this.child, this.padding});
+
   final Widget child;
   final EdgeInsetsGeometry? padding;
-
-  const _Card({required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {

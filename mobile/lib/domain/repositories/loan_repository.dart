@@ -8,4 +8,7 @@ abstract class LoanRepository {
   Future<List<Loan>> listLoans();
 
   Future<Loan?> getLoanById(String id);
+
+  /// Adds to [Loan.repaidAmount] and may set status to [LoanStatus.repaid].
+  Future<Loan?> applyRepayment(String loanId, double amount);
 }

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/entities/loan.dart';
 import '../../domain/entities/loan_risk_level.dart';
 import '../providers/backing_providers.dart';
+import '../providers/fund_providers.dart';
 import '../providers/loan_providers.dart';
 import '../utils/loan_display.dart';
 
@@ -19,7 +21,7 @@ class LoanDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currency = NumberFormat.currency(symbol: '₦', decimalDigits: 2);
     final loanAsync = ref.watch(loanByIdProvider(loanId));
     final backers = ref.watch(backingsForLoanProvider(loanId));
     final totalGuaranteed = ref.watch(totalGuaranteedForLoanProvider(loanId));
@@ -40,7 +42,25 @@ class LoanDetailScreen extends ConsumerWidget {
             principal: loan.amount,
             totalGuaranteed: totalGuaranteed,
           );
+          final fundedPct = (cov * 100).clamp(0.0, 100.0);
           final canBackMore = totalGuaranteed < loan.amount;
+          final due = loan.dueAtUtc.toLocal();
+          final now = DateTime.now();
+          final remaining = due.difference(now);
+          String timeRemaining;
+          if (remaining.isNegative) {
+            timeRemaining = 'Past due';
+          } else {
+            final d = remaining.inDays;
+            final h = remaining.inHours % 24;
+            timeRemaining = d > 0 ? '$d days, $h hours left' : '$h hours left';
+          }
+          final borrowerId = ref.watch(currentBorrowerIdProvider);
+          final isBorrower = loan.borrowerId == borrowerId;
+          final canRepay = isBorrower &&
+              loan.status != LoanStatus.repaid &&
+              loan.outstandingPrincipal > 0;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: ConstrainedBox(
@@ -61,27 +81,59 @@ class LoanDetailScreen extends ConsumerWidget {
                     style: textTheme.bodyMedium?.copyWith(color: _muted),
                   ),
                   const SizedBox(height: 20),
-                  _RiskCard(risk: risk, coveragePercent: cov * 100),
+                  _BorrowerProfileCard(
+                    borrowerId: loan.borrowerId,
+                    textTheme: textTheme,
+                  ),
+                  const SizedBox(height: 20),
+                  _RepaymentPlanPreview(
+                    loan: loan,
+                    currency: currency,
+                    textTheme: textTheme,
+                  ),
+                  const SizedBox(height: 20),
+                  _RiskCard(risk: risk, coveragePercent: fundedPct),
                   const SizedBox(height: 16),
                   _SummaryRow(
-                    label: 'Principal',
+                    label: 'Amount requested',
                     value: currency.format(loan.amount),
                     textTheme: textTheme,
                   ),
                   _SummaryRow(
-                    label: 'Total guaranteed',
-                    value: currency.format(totalGuaranteed),
+                    label: 'Funded',
+                    value: '${fundedPct.toStringAsFixed(0)}%',
                     textTheme: textTheme,
                     valueColor: const Color(0xFF166534),
                   ),
                   _SummaryRow(
-                    label: 'Coverage',
-                    value: '${(cov * 100).toStringAsFixed(0)}%',
+                    label: 'Time remaining',
+                    value: timeRemaining,
+                    textTheme: textTheme,
+                  ),
+                  if (loan.reason != null && loan.reason!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Borrower note',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: _ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      loan.reason!,
+                      style: textTheme.bodyMedium?.copyWith(color: _muted),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  _SummaryRow(
+                    label: 'Audience',
+                    value: loan.audience.label,
                     textTheme: textTheme,
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Backers (${backers.length})',
+                    'Lenders (${backers.length})',
                     style: textTheme.titleSmall?.copyWith(
                       color: _ink,
                       fontWeight: FontWeight.w700,
@@ -90,7 +142,7 @@ class LoanDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 10),
                   if (backers.isEmpty)
                     Text(
-                      'No backers yet — be the first to vouch.',
+                      'No lenders yet — be the first to fund.',
                       style: textTheme.bodyMedium?.copyWith(color: _muted),
                     )
                   else
@@ -103,7 +155,21 @@ class LoanDetailScreen extends ConsumerWidget {
                         currentBackerId: ref.watch(currentBackerIdProvider),
                       ),
                     ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
+                  if (canRepay)
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).pushNamed(
+                        '/loan-repay',
+                        arguments: loanId,
+                      ),
+                      icon: const Icon(Icons.payments_outlined),
+                      label: const Text('Repayment'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: const Color(0xFF1B833E),
+                      ),
+                    ),
+                  if (canRepay) const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: canBackMore
                         ? () => _openBackModal(
@@ -114,9 +180,9 @@ class LoanDetailScreen extends ConsumerWidget {
                               currentTotal: totalGuaranteed,
                             )
                         : null,
-                    icon: const Icon(Icons.verified_user_outlined),
+                    icon: const Icon(Icons.savings_outlined),
                     label: Text(
-                      canBackMore ? 'Back this loan' : 'Fully backed',
+                      canBackMore ? 'Fund loan' : 'Fully funded',
                     ),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -128,6 +194,141 @@ class LoanDetailScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _BorrowerProfileCard extends StatelessWidget {
+  const _BorrowerProfileCard({
+    required this.borrowerId,
+    required this.textTheme,
+  });
+
+  final String borrowerId;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = borrowerDisplayName(borrowerId);
+    final trust = trustScoreForBorrower(borrowerId);
+    final verified = trust >= 800;
+    return Material(
+      color: const Color(0xFFE8EEF5),
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: const Color(0xFFDDE3EE),
+              child: Icon(
+                Icons.person_rounded,
+                size: 32,
+                color: _ink.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Borrower',
+                        style: textTheme.labelMedium?.copyWith(color: _muted),
+                      ),
+                      if (verified) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 16,
+                          color: Color(0xFF1A73E8),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    name,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: _ink,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Trust score $trust',
+                    style: textTheme.bodySmall?.copyWith(color: _muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RepaymentPlanPreview extends StatelessWidget {
+  const _RepaymentPlanPreview({
+    required this.loan,
+    required this.currency,
+    required this.textTheme,
+  });
+
+  final Loan loan;
+  final NumberFormat currency;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    const n = 4;
+    final each = loan.amount / n;
+    final dayStep = (loan.durationDays / n).ceil();
+    final dateFmt = DateFormat.MMMd();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Repayment plan',
+          style: textTheme.titleSmall?.copyWith(
+            color: _ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '$n equal installments · 0% APR (peer policy)',
+          style: textTheme.bodySmall?.copyWith(color: _muted),
+        ),
+        const SizedBox(height: 12),
+        ...List.generate(n, (i) {
+          final due = loan.createdAt
+              .toLocal()
+              .add(Duration(days: dayStep * (i + 1)));
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${i + 1}. Due ${dateFmt.format(due)}',
+                  style: textTheme.bodyMedium?.copyWith(color: _ink),
+                ),
+                Text(
+                  currency.format(each),
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }
@@ -167,7 +368,7 @@ void _openBackModal(
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Backed ${NumberFormat.currency(symbol: r'$').format(amount)}.',
+                    'Backed ${NumberFormat.currency(symbol: '₦').format(amount)}.',
                   ),
                 ),
               );
@@ -235,9 +436,9 @@ class _RiskCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'Peer coverage',
-                  style: textTheme.labelMedium?.copyWith(color: _muted),
-                ),
+                    'Funded',
+                    style: textTheme.labelMedium?.copyWith(color: _muted),
+                  ),
                 const SizedBox(height: 4),
                 Text(
                   '${coveragePercent.toStringAsFixed(0)}%',
@@ -311,7 +512,7 @@ class _BackerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = backerId == currentBackerId
         ? 'You'
-        : 'Backer ${backerId.length > 6 ? backerId.substring(backerId.length - 6) : backerId}';
+        : 'Lender ${backerId.length > 6 ? backerId.substring(backerId.length - 6) : backerId}';
     return Material(
       color: const Color(0xFFE8EEF5),
       borderRadius: BorderRadius.circular(12),
@@ -386,7 +587,7 @@ class _BackLoanSheetState extends State<_BackLoanSheet> {
     if (_remaining > 0 && v > _remaining) {
       setState(
         () => _error =
-            'Amount exceeds uncovered principal (${NumberFormat.currency(symbol: r'$').format(_remaining)} left)',
+            'Amount exceeds uncovered principal (${NumberFormat.currency(symbol: '₦').format(_remaining)} left)',
       );
       return;
     }
@@ -418,7 +619,7 @@ class _BackLoanSheetState extends State<_BackLoanSheet> {
         const SizedBox(height: 6),
         Text(
           _remaining > 0
-              ? 'Up to ${NumberFormat.currency(symbol: r'$').format(_remaining)} uncovered.'
+              ? 'Up to ${NumberFormat.currency(symbol: '₦').format(_remaining)} uncovered.'
               : 'This loan is fully covered.',
           style: textTheme.bodySmall?.copyWith(color: _muted),
         ),
@@ -431,7 +632,7 @@ class _BackLoanSheetState extends State<_BackLoanSheet> {
             FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
           ],
           decoration: InputDecoration(
-            prefixText: r'$ ',
+            prefixText: '₦ ',
             hintText: '0.00',
             errorText: _error,
             border: const OutlineInputBorder(),

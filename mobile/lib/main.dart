@@ -5,8 +5,9 @@ import 'package:sizer/sizer.dart';
 
 import 'config/app_config.dart';
 import 'features/example/views/example_screen.dart';
+import 'presentation/screens/borrow_screen.dart';
 import 'presentation/screens/loan_detail_screen.dart';
-import 'presentation/screens/loan_request_screen.dart';
+import 'presentation/screens/loan_repayment_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_decentralized_screen.dart';
@@ -14,6 +15,9 @@ import 'screens/onboarding/onboarding_peer_network_screen.dart';
 import 'screens/onboarding/onboarding_reputation_screen.dart';
 import 'screens/onboarding/onboarding_trust_capital_screen.dart';
 import 'screens/splash_screen.dart';
+import 'presentation/screens/grants/grant_detail_screen.dart';
+import 'presentation/screens/grants/grant_donate_screen.dart';
+import 'screens/notification_screen.dart';
 import 'screens/profile_screen.dart';
 
 void main() async {
@@ -52,7 +56,7 @@ class MyApp extends StatelessWidget {
                 const OnboardingTrustCapitalScreen(),
             '/login': (ctx) => const LoginScreen(),
             '/home': (ctx) => const HomeScreen(),
-            '/loan-request': (ctx) => const LoanRequestScreen(),
+            '/loan-request': (ctx) => const BorrowScreen(),
             '/loan-detail': (ctx) {
               final id = ModalRoute.of(ctx)!.settings.arguments as String?;
               if (id == null || id.isEmpty) {
@@ -62,8 +66,36 @@ class MyApp extends StatelessWidget {
               }
               return LoanDetailScreen(loanId: id);
             },
+            '/loan-repay': (ctx) {
+              final id = ModalRoute.of(ctx)!.settings.arguments as String?;
+              if (id == null || id.isEmpty) {
+                return const Scaffold(
+                  body: Center(child: Text('Missing loan id')),
+                );
+              }
+              return LoanRepaymentScreen(loanId: id);
+            },
             '/example': (ctx) => const ExampleScreen(),
+            '/notifications': (ctx) => const NotificationScreen(),
             '/profile': (ctx) => const ProfileScreen(),
+            '/grant-detail': (ctx) {
+              final id = ModalRoute.of(ctx)!.settings.arguments as String?;
+              if (id == null || id.isEmpty) {
+                return const Scaffold(
+                  body: Center(child: Text('Missing grant id')),
+                );
+              }
+              return GrantDetailScreen(grantId: id);
+            },
+            '/grant-donate': (ctx) {
+              final id = ModalRoute.of(ctx)!.settings.arguments as String?;
+              if (id == null || id.isEmpty) {
+                return const Scaffold(
+                  body: Center(child: Text('Missing grant id')),
+                );
+              }
+              return GrantDonateScreen(grantId: id);
+            },
           },
         );
       },

@@ -10,7 +10,46 @@ final currentBackerIdProvider = Provider<String>((ref) => 'local-backer');
 
 /// In-memory backing list; implements [BackingRepository] for tests / injection.
 class BackingNotifier extends StateNotifier<List<Backing>> implements BackingRepository {
-  BackingNotifier() : super(const []);
+  BackingNotifier() : super(_seedBackings);
+
+  static final List<Backing> _seedBackings = [
+    Backing(
+      id: 'seed_b_txt1',
+      loanId: 'loan_seed_textbook',
+      backerId: 'local-backer',
+      amountGuaranteed: 200,
+    ),
+    Backing(
+      id: 'seed_b_txt2',
+      loanId: 'loan_seed_textbook',
+      backerId: 'lender_chidi',
+      amountGuaranteed: 220,
+    ),
+    Backing(
+      id: 'seed_b_lab1',
+      loanId: 'loan_seed_lab',
+      backerId: 'lender_pool',
+      amountGuaranteed: 800,
+    ),
+    Backing(
+      id: 'seed_b_lab2',
+      loanId: 'loan_seed_lab',
+      backerId: 'lender_friends',
+      amountGuaranteed: 480.5,
+    ),
+    Backing(
+      id: 'seed_b_rent',
+      loanId: 'loan_seed_rent',
+      backerId: 'lender_amina',
+      amountGuaranteed: 900,
+    ),
+    Backing(
+      id: 'seed_b_pend',
+      loanId: 'loan_seed_lent_out_2',
+      backerId: 'local-backer',
+      amountGuaranteed: 250,
+    ),
+  ];
 
   @override
   List<Backing> backingForLoan(String loanId) {

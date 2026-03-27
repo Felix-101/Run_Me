@@ -20,6 +20,12 @@ final activeLoansProvider = FutureProvider<List<Loan>>((ref) async {
   return ref.read(loanRepositoryProvider).listLoans();
 });
 
+/// Loans where the current user is the borrower (Borrow landing).
+final borrowerLoansProvider = FutureProvider<List<Loan>>((ref) async {
+  final id = ref.watch(currentBorrowerIdProvider);
+  return ref.read(loanRepositoryProvider).loansForBorrower(id);
+});
+
 final loanByIdProvider = FutureProvider.family<Loan?, String>((ref, id) async {
   return ref.read(loanRepositoryProvider).getLoanById(id);
 });
@@ -57,8 +63,9 @@ class LoanRequestController extends StateNotifier<LoanRequestState> {
   final CreateLoanRequestUseCase _useCase;
   final String _borrowerId;
 
-  static const double _maxAmount = 50_000;
-  static const List<int> allowedDurations = [7, 14, 30, 60, 90];
+  static const double _maxAmount = 50000;
+  static const int minDurationDays = 7;
+  static const int maxDurationDays = 90;
 
   void reset() {
     state = const LoanRequestState();
@@ -82,8 +89,8 @@ class LoanRequestController extends StateNotifier<LoanRequestState> {
     String? durationErr;
     if (durationDays == null) {
       durationErr = 'Choose a duration';
-    } else if (!allowedDurations.contains(durationDays)) {
-      durationErr = 'Invalid duration';
+    } else if (durationDays < minDurationDays || durationDays > maxDurationDays) {
+      durationErr = 'Duration must be between $minDurationDays and $maxDurationDays days';
     }
 
     return (amount: amountErr, duration: durationErr);
@@ -93,6 +100,9 @@ class LoanRequestController extends StateNotifier<LoanRequestState> {
     required String amountText,
     required LoanPurpose purpose,
     required int? durationDays,
+    LoanAudience audience = LoanAudience.public,
+    String? reason,
+    String? proofFileLabel,
   }) async {
     final v = validate(amountText: amountText, durationDays: durationDays);
     if (v.amount != null || v.duration != null) {
@@ -114,6 +124,9 @@ class LoanRequestController extends StateNotifier<LoanRequestState> {
           amount: amount,
           purpose: purpose,
           durationDays: durationDays!,
+          audience: audience,
+          reason: reason,
+          proofFileLabel: proofFileLabel,
         ),
       );
       state = LoanRequestState(loan: loan);
