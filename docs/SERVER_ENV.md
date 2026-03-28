@@ -47,6 +47,7 @@ The RunMe server uses the official **`redis`** Node client (TCP), **not** the RE
 For TLS on Upstash, use **`rediss://`**. The API automatically rewrites **`redis://` → `rediss://`** when the host ends with **`upstash.io`**, because plain `redis://` to Upstash is closed immediately (`Socket closed unexpectedly`).
 
 Other providers (Redis Cloud, ElastiCache, etc.) also expose a `redis(s)://` URL.
+
 3. **`JWT_ACCESS_SECRET`** — long random string.
 4. **`JWT_REFRESH_SECRET`** — **different** long random string.
 
@@ -71,7 +72,8 @@ Resolved listen port: **`SERVER_PORT` ?? `PORT` ?? `4000`**.
 
 ## CORS
 
-- **`CORS_ORIGIN`**: `*` allows any origin.
+- **`CORS_ORIGIN`**: `*` allows any origin (simplest while the **admin** app calls the API from the browser).
+- For a locked-down API, include every admin origin, e.g. `http://localhost:5173,http://localhost:5174,https://your-admin-host.com` (Vite’s dev server port may vary).
 - For specific apps: `https://app.example.com,https://admin.example.com` (no spaces after commas, or trim is applied).
 
 ---

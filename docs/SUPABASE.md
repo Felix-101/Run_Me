@@ -24,7 +24,7 @@ Example (pooler):
 postgresql://postgres.<project-ref>:[YOUR-PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require
 ```
 
-Append `?sslmode=require` if it is not already present. The API sets `ssl` on the `pg` `Pool` when the host is `supabase.com` or in production.
+Append `?sslmode=require` if it is not already present. The API connects with **`postgres` (postgres.js)** and **`prepare: false`** so the **transaction pooler** works with Drizzle (named prepared statements from `node-pg` are incompatible with PgBouncer transaction mode).
 
 ## 3. Apply the schema
 
@@ -48,6 +48,22 @@ psql "$DATABASE_URL" -f server/drizzle/0000_init.sql
 Use the same URI you will set as `DATABASE_URL` for the API.
 
 > **Existing databases:** If you already had an older `users` table from an earlier RunMe migration, you may need manual `ALTER TABLE` statements instead of re-running the full file. For a greenfield project, the script above is enough.
+
+### Row Level Security (“UNRESTRICTED” in the Supabase UI)
+
+If table badges show **UNRESTRICTED**, **RLS is off**. Anyone who can call the **Supabase Data API** with your **anon** or **authenticated** key could, in theory, access those tables through PostgREST.
+
+RunMe’s **mobile/admin apps talk to your own API** (Koyeb), not directly to PostgREST for these tables — so you should still **turn RLS on** to follow Supabase’s security model.
+
+1. In Supabase: **SQL → New query**.
+2. Paste and run **`server/drizzle/enable_rls_supabase.sql`**.
+
+That enables RLS on all RunMe tables **without** policies. Result:
+
+- **Browser / anon key** via Supabase API: **no access** to those tables until you add `CREATE POLICY` rules.
+- **Node server** using the normal **database connection string** (`DATABASE_URL`): still works; the DB role used there **bypasses RLS** (same as [Supabase’s guidance](https://supabase.com/docs/guides/database/postgres/row-level-security) for privileged server access).
+
+If you later use **Supabase Client** in the frontend for some of these tables, add explicit policies (e.g. `USING (auth.uid() = user_id)`).
 
 ### Backfill wallets for users created before the `wallets` table
 

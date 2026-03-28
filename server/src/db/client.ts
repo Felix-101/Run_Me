@@ -1,15 +1,20 @@
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { env } from "../config/env";
 
-export const pool = new Pool({
-  connectionString: env.DATABASE_URL,
+/**
+ * Supabase's transaction pooler (PgBouncer, often port 6543) does not support
+ * server-side prepared statements across connections. drizzle-orm + node-pg
+ * uses named prepared statements by default, which surfaces as opaque DB errors.
+ * postgres.js with `prepare: false` uses the simple query protocol instead.
+ */
+export const sql = postgres(env.DATABASE_URL, {
   max: 20,
-  ssl:
-    env.DATABASE_URL.includes("supabase.com") || env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : undefined
+  prepare: false
 });
 
-export const db = drizzle(pool);
+export const db = drizzle(sql);
 
+export async function closeDb(): Promise<void> {
+  await sql.end({ timeout: 5 });
+}

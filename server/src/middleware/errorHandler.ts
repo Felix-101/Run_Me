@@ -12,6 +12,11 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
         ? "Invalid request"
         : "Internal server error";
 
+  if (status === 500) {
+    // eslint-disable-next-line no-console
+    console.error("Unhandled API error:", err);
+  }
+
   if (res.headersSent) return;
   res.status(status).json({
     error: {

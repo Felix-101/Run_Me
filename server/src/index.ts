@@ -4,6 +4,7 @@ dotenv.config();
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { connectRedis } from "./lib/redis";
+import { closeDb } from "./db/client";
 import { seedAdminIfMissing } from "./db/seed";
 import { redisClient } from "./lib/redis";
 
@@ -24,6 +25,7 @@ async function main() {
   const shutdown = async () => {
     try {
       await redisClient.quit();
+      await closeDb();
     } finally {
       server.close(() => process.exit(0));
     }

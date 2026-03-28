@@ -26,6 +26,7 @@ Monorepo for:
 See `.env.example` at the repo root and the `*/.env.example` files for each app.
 
 Notes:
-- `web/` and `admin/` use Vite env var `VITE_SERVER_BASE_URL`.
+- `web/` and `admin/` use Vite env var `VITE_SERVER_BASE_URL` (optional).
+- **`admin/`**: if `VITE_SERVER_BASE_URL` is unset, dev and production builds use the default API URL in `admin/src/config/apiBase.ts`. Set `VITE_SERVER_BASE_URL=http://localhost:4000` in `admin/.env.local` when using a local server.
 - `mobile/` reads `mobile/assets/config.json` at runtime (see `mobile/.env.example`).
 

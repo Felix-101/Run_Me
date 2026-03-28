@@ -1,13 +1,13 @@
-const SERVER_BASE_URL =
-  import.meta.env.VITE_SERVER_BASE_URL?.toString() ?? "http://localhost:4000";
+import { getApiBaseUrl } from "../config/apiBase";
 
 export async function apiFetch<T>(
   path: string,
   options?: RequestInit & { auth?: boolean }
 ): Promise<T> {
   const token = options?.auth ? localStorage.getItem("accessToken") : null;
+  const base = getApiBaseUrl();
 
-  const res = await fetch(`${SERVER_BASE_URL}${path}`, {
+  const res = await fetch(`${base}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

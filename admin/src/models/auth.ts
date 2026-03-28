@@ -12,5 +12,6 @@ export type LoginRequest = {
 
 export type LoginResponse = {
   accessToken: string;
+  refreshToken?: string;
 };
 
