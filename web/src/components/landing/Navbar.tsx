@@ -1,3 +1,5 @@
+import { RUNME_APK_DRIVE_URL } from "../../config/links";
+
 export default function Navbar() {
   return (
     <header className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-6">
@@ -39,11 +41,18 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <a
             className="hidden rounded-2xl bg-green-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-green-300 md:block"
-            href="#download"
+            href={RUNME_APK_DRIVE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Get the App
           </a>
-          <a className="text-sm font-semibold text-white/80 md:hidden" href="#download">
+          <a
+            className="text-sm font-semibold text-white/80 md:hidden"
+            href={RUNME_APK_DRIVE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Get App
           </a>
         </div>

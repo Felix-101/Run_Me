@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import appleIcon from "../../assets/icons/apple_icon_svg.svg";
 import googleIcon from "../../assets/icons/google_icon_svg.svg";
 import StoreBadge from "../components/landing/StoreBadge";
-
-const APK_DRIVE_URL =
-  "https://drive.google.com/file/d/1N4oqkOfnoRrl9XherUi2kLxCeek0SPF5/view?usp=sharing";
+import { RUNME_APK_DRIVE_URL } from "../config/links";
 const ADMIN_APP_URL = "https://runmeadmin.netlify.app/";
 const CONTACT_EMAIL = "jonesinim@gmail.com";
 
@@ -105,7 +103,7 @@ export default function InstructorsPage() {
   const [apkCopied, setApkCopied] = useState(false);
 
   async function copyApkUrl() {
-    const ok = await copyToClipboard(APK_DRIVE_URL);
+    const ok = await copyToClipboard(RUNME_APK_DRIVE_URL);
     if (ok) {
       setApkCopied(true);
       window.setTimeout(() => setApkCopied(false), 2000);
@@ -146,7 +144,7 @@ export default function InstructorsPage() {
           </p>
           <p className="mt-4">
             <a
-              href={APK_DRIVE_URL}
+              href={RUNME_APK_DRIVE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex rounded-xl bg-green-400 px-4 py-2.5 text-sm font-semibold text-black hover:bg-green-300"
@@ -158,12 +156,12 @@ export default function InstructorsPage() {
             <p className="min-w-0 flex-1 text-xs leading-relaxed text-white/50">
               <span className="text-white/45">Direct link:</span>{" "}
               <a
-                href={APK_DRIVE_URL}
+                href={RUNME_APK_DRIVE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="break-all text-green-400/90 hover:text-green-300"
               >
-                {APK_DRIVE_URL}
+                {RUNME_APK_DRIVE_URL}
               </a>
             </p>
             <button

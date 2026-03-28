@@ -1,9 +1,11 @@
 import phoneContainer from "../../../assets/image/phone_container.png";
 import appleIcon from "../../../assets/icons/apple_icon_svg.svg";
 import googleIcon from "../../../assets/icons/google_icon_svg.svg";
+import { useLandingToast } from "../LandingToastProvider";
 import StoreBadge from "./StoreBadge";
 
 export default function DownloadFromPocketSection() {
+  const { showToast } = useLandingToast();
   return (
     <section id="download" className="bg-black">
       <div className="mx-auto w-full max-w-7xl px-6 pb-16">
@@ -40,7 +42,12 @@ export default function DownloadFromPocketSection() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <StoreBadge iconSrc={appleIcon} topText="DOWNLOAD ON" bottomText="App Store" />
+                <StoreBadge
+                  iconSrc={appleIcon}
+                  topText="DOWNLOAD ON"
+                  bottomText="App Store"
+                  onClick={() => showToast("Coming Soon!")}
+                />
                 <StoreBadge iconSrc={googleIcon} topText="GET IT ON" bottomText="Google Play" />
               </div>
             </div>

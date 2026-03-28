@@ -2,10 +2,13 @@ import container1Hero from "../../../assets/image/container_1.png";
 import downloadIcon from "../../../assets/icons/download_icon.svg";
 import appleIcon from "../../../assets/icons/apple_icon_svg.svg";
 import googleIcon from "../../../assets/icons/google_icon_svg.svg";
+import { RUNME_APK_DRIVE_URL } from "../../config/links";
+import { useLandingToast } from "../LandingToastProvider";
 import Navbar from "./Navbar";
 import StoreBadge from "./StoreBadge";
 
 export default function HeroSection() {
+  const { showToast } = useLandingToast();
   return (
     <section className="relative overflow-hidden bg-black">
       <div
@@ -37,7 +40,9 @@ export default function HeroSection() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
               <a
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-400 px-6 py-3 text-sm font-semibold text-black hover:bg-green-300"
-                href="#download"
+                href={RUNME_APK_DRIVE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <img alt="" className="h-5 w-5 object-contain" src={downloadIcon} />
                 Download to Start
@@ -51,7 +56,12 @@ export default function HeroSection() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <StoreBadge iconSrc={appleIcon} topText="DOWNLOAD ON" bottomText="App Store" />
+              <StoreBadge
+                iconSrc={appleIcon}
+                topText="DOWNLOAD ON"
+                bottomText="App Store"
+                onClick={() => showToast("Coming Soon!")}
+              />
               <StoreBadge iconSrc={googleIcon} topText="GET IT ON" bottomText="Google Play" />
             </div>
           </div>

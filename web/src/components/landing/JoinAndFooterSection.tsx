@@ -1,9 +1,10 @@
 import appleIcon from "../../../assets/icons/apple_icon_svg.svg";
 import googleIcon from "../../../assets/icons/google_icon_svg.svg";
-import brandIcon from "../../../assets/icons/container_icon_2.png";
+import { useLandingToast } from "../LandingToastProvider";
 import StoreBadge from "./StoreBadge";
 
 export default function JoinAndFooterSection() {
+  const { showToast } = useLandingToast();
   return (
     <footer id="ambassadors" className="bg-black">
       <div className="mx-auto w-full max-w-7xl px-6 pb-10 pt-12">
@@ -41,7 +42,7 @@ export default function JoinAndFooterSection() {
                 <img
                   alt="runme"
                   className="h-10 w-10 shrink-0 object-contain"
-                  src={brandIcon}
+                  src="/favicon.svg"
                   width={40}
                   height={40}
                 />
@@ -92,6 +93,7 @@ export default function JoinAndFooterSection() {
                   iconSrc={appleIcon}
                   topText="DOWNLOAD ON"
                   bottomText="App Store"
+                  onClick={() => showToast("Coming Soon!")}
                 />
                 <StoreBadge
                   iconSrc={googleIcon}
