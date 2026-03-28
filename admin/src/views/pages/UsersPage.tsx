@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { getAdminUsers } from "../../services/adminApi";
+import { getAllAdminUsers } from "../../services/adminApi";
 import type { AdminUserRow } from "../../models/admin";
 import { formatDate } from "../../utils/format";
 
@@ -21,8 +21,8 @@ export default function UsersPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await getAdminUsers({ limit: 100 });
-        if (!c) setItems(res.items);
+        const rows = await getAllAdminUsers();
+        if (!c) setItems(rows);
       } catch (e) {
         if (!c) setError(e instanceof Error ? e.message : "Failed to load users");
       } finally {
@@ -135,8 +135,8 @@ export function UserDetailPage() {
     let c = false;
     (async () => {
       try {
-        const res = await getAdminUsers({ limit: 500 });
-        const found = res.items.find((u) => u.id === userId);
+        const rows = await getAllAdminUsers();
+        const found = rows.find((u) => u.id === userId);
         if (!c) setUser(found ?? null);
       } finally {
         if (!c) setLoading(false);

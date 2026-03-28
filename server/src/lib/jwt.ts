@@ -30,8 +30,7 @@ export function signAccessToken(input: {
     },
     env.JWT_ACCESS_SECRET,
     {
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN as any,
-      jwtid: input.jti
+      expiresIn: env.JWT_ACCESS_EXPIRES_IN as any
     }
   );
 }
@@ -46,8 +45,7 @@ export function verifyAccessToken(token: string): AccessTokenClaims {
 
 export function signRefreshToken(input: { userId: string; jti: string }) {
   return sign({ sub: input.userId, jti: input.jti }, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN as any,
-    jwtid: input.jti
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN as any
   });
 }
 

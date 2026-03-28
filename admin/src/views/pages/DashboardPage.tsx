@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAdminAudit, getAdminLoans, getAdminSummary } from "../../services/adminApi";
+import { getAdminAudit, getAdminSummary, getAllAdminLoans } from "../../services/adminApi";
 import type { AdminLoanRow, AdminSummary } from "../../models/admin";
 import { formatCompact, formatDate, formatNaira } from "../../utils/format";
 
@@ -19,15 +19,15 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [s, loanPage, audit] = await Promise.all([
+        const [s, loanRows, audit] = await Promise.all([
           getAdminSummary(),
-          getAdminLoans({ limit: 200 }),
+          getAllAdminLoans(),
           getAdminAudit({ limit: 15 })
         ]);
         if (cancelled) return;
         setSummary(s);
-        setLoans(loanPage.items);
-        setLoansTruncated(!!loanPage.nextCursor);
+        setLoans(loanRows);
+        setLoansTruncated(false);
 
         const auditLines: ActivityItem[] = audit.items.map(
           (a): ActivityItem => ({

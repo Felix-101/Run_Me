@@ -8,6 +8,41 @@ import type {
   Paginated
 } from "../models/admin";
 
+/** Page size for admin list endpoints; must be ≤ server `listQuerySchema` max (100). */
+export const ADMIN_LIST_PAGE_SIZE = 50;
+
+async function fetchAllAdminPages<T>(
+  fetchPage: (cursor: string | undefined) => Promise<Paginated<T>>
+): Promise<T[]> {
+  const all: T[] = [];
+  let cursor: string | undefined;
+  for (;;) {
+    const page = await fetchPage(cursor);
+    all.push(...page.items);
+    if (!page.nextCursor) break;
+    cursor = page.nextCursor;
+  }
+  return all;
+}
+
+export async function getAllAdminLoans(): Promise<AdminLoanRow[]> {
+  return fetchAllAdminPages((cursor) =>
+    getAdminLoans({ limit: ADMIN_LIST_PAGE_SIZE, cursor })
+  );
+}
+
+export async function getAllAdminGrants(): Promise<AdminGrantRow[]> {
+  return fetchAllAdminPages((cursor) =>
+    getAdminGrants({ limit: ADMIN_LIST_PAGE_SIZE, cursor })
+  );
+}
+
+export async function getAllAdminUsers(): Promise<AdminUserRow[]> {
+  return fetchAllAdminPages((cursor) =>
+    getAdminUsers({ limit: ADMIN_LIST_PAGE_SIZE, cursor })
+  );
+}
+
 export async function getAdminSummary() {
   return apiFetch<AdminSummary>("/admin/summary", { method: "GET", auth: true });
 }

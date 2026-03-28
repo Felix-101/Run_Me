@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { getAdminLoans } from "../../services/adminApi";
+import { getAllAdminLoans } from "../../services/adminApi";
 import type { AdminLoanRow } from "../../models/admin";
 import { formatDate, formatNaira } from "../../utils/format";
 
@@ -20,8 +20,8 @@ export default function LoansPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await getAdminLoans({ limit: 200 });
-        if (!c) setItems(res.items);
+        const rows = await getAllAdminLoans();
+        if (!c) setItems(rows);
       } catch (e) {
         if (!c) setError(e instanceof Error ? e.message : "Failed to load loans");
       } finally {
@@ -177,8 +177,8 @@ export function LoanDetailPage() {
     let c = false;
     (async () => {
       try {
-        const res = await getAdminLoans({ limit: 500 });
-        const found = res.items.find((x) => x.id === loanId);
+        const rows = await getAllAdminLoans();
+        const found = rows.find((x) => x.id === loanId);
         if (!c) setLoan(found ?? null);
       } finally {
         if (!c) setLoading(false);

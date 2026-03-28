@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { getAdminGrants } from "../../services/adminApi";
+import { getAllAdminGrants } from "../../services/adminApi";
 import type { AdminGrantRow } from "../../models/admin";
 import { formatDate, formatNaira } from "../../utils/format";
 
@@ -13,8 +13,8 @@ export default function GrantsPage() {
     let c = false;
     (async () => {
       try {
-        const res = await getAdminGrants({ limit: 200 });
-        if (!c) setItems(res.items);
+        const rows = await getAllAdminGrants();
+        if (!c) setItems(rows);
       } catch (e) {
         if (!c) setError(e instanceof Error ? e.message : "Failed to load grants");
       } finally {
@@ -96,8 +96,8 @@ export function GrantDetailPage() {
     let c = false;
     (async () => {
       try {
-        const res = await getAdminGrants({ limit: 500 });
-        const found = res.items.find((x) => x.id === grantId);
+        const rows = await getAllAdminGrants();
+        const found = rows.find((x) => x.id === grantId);
         if (!c) setGrant(found ?? null);
       } finally {
         if (!c) setLoading(false);
