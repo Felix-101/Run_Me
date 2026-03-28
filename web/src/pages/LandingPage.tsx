@@ -1,3 +1,4 @@
+import InstructorToast from "../components/InstructorToast";
 import CampusLifeSection from "../components/landing/CampusLifeSection";
 import DownloadFromPocketSection from "../components/landing/DownloadFromPocketSection";
 import HeroSection from "../components/landing/HeroSection";
@@ -9,6 +10,7 @@ import StudentsLendersSection from "../components/landing/StudentsLendersSection
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black font-sans text-white">
+      <InstructorToast />
       <HeroSection />
       <StatsStrip />
       <CampusLifeSection />

@@ -1,11 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import InstructorsPage from "./pages/InstructorsPage";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/instructors" element={<InstructorsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/app" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

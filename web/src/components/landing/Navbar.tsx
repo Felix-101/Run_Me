@@ -1,5 +1,3 @@
-import brandIcon from "../../../assets/icons/container_icon_2.png";
-
 export default function Navbar() {
   return (
     <header className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-6">
@@ -8,7 +6,7 @@ export default function Navbar() {
           <img
             alt="runme"
             className="h-10 w-10 shrink-0 object-contain"
-            src={brandIcon}
+            src="/favicon.svg"
             width={40}
             height={40}
           />
