@@ -1,0 +1,949 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "RunMe API",
+    "description": "REST API for the RunMe mobile app (auth, loans, grants, wallet, admin). Use **Authorize** with a Bearer token from `POST /auth/login` or `POST /auth/register`.",
+    "version": "0.1.0"
+  },
+  "servers": [
+    { "url": "/", "description": "Current host" }
+  ],
+  "tags": [
+    { "name": "Root", "description": "Service root" },
+    { "name": "Health", "description": "Liveness / Redis" },
+    { "name": "Auth", "description": "Login, register, refresh, logout" },
+    { "name": "Me", "description": "Current user profile, trust, wallet, notifications, bank accounts" },
+    { "name": "Admin", "description": "Admin-only endpoints" },
+    { "name": "Loans", "description": "Borrow / lend / repay / backings" },
+    { "name": "Grants", "description": "Grant requests, donations, comments" },
+    { "name": "Uploads", "description": "Presigned upload stubs" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Paste the `accessToken` value from login/register (without the word Bearer)."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": { "type": "string" }
+            }
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 1 }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 6 }
+        }
+      },
+      "TokenPair": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": {
+          "refreshToken": { "type": "string" }
+        }
+      },
+      "LogoutRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": { "type": "string", "description": "Optional: revokes refresh token server-side" }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string" },
+          "role": { "type": "string", "example": "user" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "displayName": { "type": "string", "nullable": true },
+          "schoolName": { "type": "string", "nullable": true },
+          "studentIdVerified": { "type": "boolean" }
+        }
+      },
+      "PatchMeRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": { "type": "string" },
+          "schoolName": { "type": "string" },
+          "studentIdVerified": { "type": "boolean" }
+        }
+      },
+      "TrustScore": {
+        "type": "object",
+        "properties": {
+          "score": { "type": "integer" },
+          "level": { "type": "string", "enum": ["Low", "Medium", "High"] },
+          "factors": {
+            "type": "object",
+            "properties": {
+              "verificationScore": { "type": "integer" },
+              "repaymentScore": { "type": "integer" },
+              "socialScore": { "type": "integer" },
+              "activityScore": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "Wallet": {
+        "type": "object",
+        "properties": {
+          "balanceNaira": { "type": "number" },
+          "currency": { "type": "string", "example": "NGN" }
+        }
+      },
+      "DepositRequest": {
+        "type": "object",
+        "required": ["amountNaira"],
+        "properties": {
+          "amountNaira": { "type": "number", "minimum": 0 },
+          "provider": { "type": "string" },
+          "callbackUrl": { "type": "string", "format": "uri" }
+        }
+      },
+      "WithdrawalRequest": {
+        "type": "object",
+        "required": ["amountNaira", "bankAccountId"],
+        "properties": {
+          "amountNaira": { "type": "number", "minimum": 0 },
+          "bankAccountId": { "type": "string", "format": "uuid" }
+        }
+      },
+      "BankAccount": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "accountNumber": { "type": "string" },
+          "bankCode": { "type": "string" },
+          "accountName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BankAccountCreate": {
+        "type": "object",
+        "required": ["accountNumber", "bankCode", "accountName"],
+        "properties": {
+          "accountNumber": { "type": "string" },
+          "bankCode": { "type": "string" },
+          "accountName": { "type": "string" }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "read": { "type": "boolean" },
+          "type": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminSummary": {
+        "type": "object",
+        "properties": {
+          "usersCount": { "type": "integer" },
+          "generatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Loan": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "borrowerId": { "type": "string", "format": "uuid" },
+          "lenderId": { "type": "string", "format": "uuid", "nullable": true },
+          "amount": { "type": "number" },
+          "purpose": { "type": "string", "enum": ["rent", "food", "emergency"] },
+          "durationDays": { "type": "integer" },
+          "interestRate": { "type": "number" },
+          "status": { "type": "string", "enum": ["pending", "funded", "repaid"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "audience": { "type": "string", "enum": ["public", "friendsOnly"] },
+          "reason": { "type": "string", "nullable": true },
+          "proofFileUrl": { "type": "string", "nullable": true },
+          "repaidAmount": { "type": "number" }
+        }
+      },
+      "LoanCreate": {
+        "type": "object",
+        "required": ["amount", "purpose", "durationDays", "audience"],
+        "properties": {
+          "amount": { "type": "number", "minimum": 0 },
+          "purpose": { "type": "string", "enum": ["rent", "food", "emergency"] },
+          "durationDays": { "type": "integer", "minimum": 7, "maximum": 365 },
+          "audience": { "type": "string", "enum": ["public", "friendsOnly"] },
+          "reason": { "type": "string" },
+          "proofFileUrl": { "type": "string", "format": "uri", "nullable": true }
+        }
+      },
+      "RepaymentRequest": {
+        "type": "object",
+        "required": ["amount"],
+        "properties": {
+          "amount": { "type": "number", "minimum": 0 }
+        }
+      },
+      "Backing": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "loanId": { "type": "string", "format": "uuid" },
+          "backerId": { "type": "string", "format": "uuid" },
+          "amountGuaranteed": { "type": "number" }
+        }
+      },
+      "BackingCreate": {
+        "type": "object",
+        "required": ["amountGuaranteed"],
+        "properties": {
+          "amountGuaranteed": { "type": "number", "minimum": 0 }
+        }
+      },
+      "Coverage": {
+        "type": "object",
+        "properties": {
+          "principal": { "type": "number" },
+          "totalGuaranteed": { "type": "number" },
+          "coverageRatio": { "type": "number" }
+        }
+      },
+      "Grant": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "story": { "type": "string" },
+          "goalNaira": { "type": "number" },
+          "raisedNaira": { "type": "number" },
+          "category": { "type": "string", "enum": ["studentStory", "urgentNeed", "education"] },
+          "studentName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "attachmentUrls": { "type": "array", "items": { "type": "string" } },
+          "isUrgent": { "type": "boolean" }
+        }
+      },
+      "GrantCreate": {
+        "type": "object",
+        "required": ["title", "story", "goalNaira", "category", "studentName"],
+        "properties": {
+          "title": { "type": "string" },
+          "story": { "type": "string" },
+          "goalNaira": { "type": "number", "minimum": 0 },
+          "category": { "type": "string", "enum": ["studentStory", "urgentNeed", "education"] },
+          "studentName": { "type": "string" },
+          "isUrgent": { "type": "boolean" },
+          "attachmentUrls": { "type": "array", "items": { "type": "string", "format": "uri" } }
+        }
+      },
+      "DonationCreate": {
+        "type": "object",
+        "required": ["amountNaira"],
+        "properties": {
+          "amountNaira": { "type": "number", "minimum": 0 },
+          "anonymous": { "type": "boolean" }
+        }
+      },
+      "CommentCreate": {
+        "type": "object",
+        "required": ["authorName", "message"],
+        "properties": {
+          "authorName": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "PresignRequest": {
+        "type": "object",
+        "required": ["purpose", "contentType", "fileName"],
+        "properties": {
+          "purpose": { "type": "string", "enum": ["loan_proof", "grant_media"] },
+          "contentType": { "type": "string" },
+          "fileName": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["Root"],
+        "summary": "API root",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check (Redis ping)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "redis": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "503": { "description": "Redis unreachable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenPair" } } }
+          },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Email already in use" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenPair" } } }
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RefreshRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenPair" } } }
+          },
+          "401": { "description": "Invalid refresh token" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout (blacklist access token; optional refresh revoke)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LogoutRequest" } }
+          }
+        },
+        "responses": {
+          "204": { "description": "No content" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["Me"],
+        "summary": "Get current user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "User not found" }
+        }
+      },
+      "patch": {
+        "tags": ["Me"],
+        "summary": "Update profile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PatchMeRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/trust-score": {
+      "get": {
+        "tags": ["Me"],
+        "summary": "Trust score",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TrustScore" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/wallet": {
+      "get": {
+        "tags": ["Me"],
+        "summary": "Wallet balance",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Wallet" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/wallet/deposits": {
+      "post": {
+        "tags": ["Me"],
+        "summary": "Fund wallet (stub)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DepositRequest" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stub response" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/wallet/withdrawals": {
+      "post": {
+        "tags": ["Me"],
+        "summary": "Withdraw (stub)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/WithdrawalRequest" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stub response" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/bank-accounts": {
+      "get": {
+        "tags": ["Me"],
+        "summary": "List bank accounts",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/BankAccount" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Me"],
+        "summary": "Link bank account",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BankAccountCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BankAccount" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/notifications": {
+      "get": {
+        "tags": ["Me"],
+        "summary": "List notifications",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } },
+          { "name": "unreadOnly", "in": "query", "schema": { "type": "boolean", "default": false } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } },
+                    "nextCursor": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/me/notifications/{id}/read": {
+      "patch": {
+        "tags": ["Me"],
+        "summary": "Mark notification read",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "ok": { "type": "boolean" } } }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/admin/summary": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Admin dashboard summary",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSummary" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden (not admin)" }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List users",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 100 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/admin/loans": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all loans",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/admin/grants": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all grants",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Audit log",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/loans": {
+      "get": {
+        "tags": ["Loans"],
+        "summary": "List loans",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "borrowerId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "funded", "repaid"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Loan" } },
+                    "nextCursor": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Loans"],
+        "summary": "Create loan request",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/LoanCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Loan" } } }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/loans/{loanId}": {
+      "get": {
+        "tags": ["Loans"],
+        "summary": "Get loan by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "loanId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Loan" } } }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/loans/{loanId}/coverage": {
+      "get": {
+        "tags": ["Loans"],
+        "summary": "Funding coverage",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "loanId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Coverage" } } }
+          },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/loans/{loanId}/backings": {
+      "get": {
+        "tags": ["Loans"],
+        "summary": "List backings",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "loanId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Backing" } }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Not found" }
+        }
+      },
+      "post": {
+        "tags": ["Loans"],
+        "summary": "Create backing / guarantee",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "loanId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BackingCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Backing" } } }
+          },
+          "404": { "description": "Not found" },
+          "409": { "description": "Conflict" }
+        }
+      }
+    },
+    "/loans/{loanId}/repayments": {
+      "post": {
+        "tags": ["Loans"],
+        "summary": "Repay loan",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "loanId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RepaymentRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Loan" } } }
+          },
+          "400": { "description": "Bad request" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not found" },
+          "409": { "description": "Wrong state" }
+        }
+      }
+    },
+    "/grants": {
+      "get": {
+        "tags": ["Grants"],
+        "summary": "List grants",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["studentStory", "urgentNeed", "education"] } },
+          { "name": "urgentOnly", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "excludeBorrowerId", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Grant" } },
+                    "nextCursor": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Grants"],
+        "summary": "Create grant request",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/GrantCreate" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Grant" } } }
+          }
+        }
+      }
+    },
+    "/grants/{grantId}": {
+      "get": {
+        "tags": ["Grants"],
+        "summary": "Get grant",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "grantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Grant" } } }
+          },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/grants/{grantId}/donations": {
+      "get": {
+        "tags": ["Grants"],
+        "summary": "List donations",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "grantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "post": {
+        "tags": ["Grants"],
+        "summary": "Donate",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "grantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/DonationCreate" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/grants/{grantId}/comments": {
+      "get": {
+        "tags": ["Grants"],
+        "summary": "List comments",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "grantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "post": {
+        "tags": ["Grants"],
+        "summary": "Post comment",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "grantId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/CommentCreate" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/uploads/presign": {
+      "post": {
+        "tags": ["Uploads"],
+        "summary": "Presigned upload (stub)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PresignRequest" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stub URLs" }
+        }
+      }
+    }
+  }
+}
